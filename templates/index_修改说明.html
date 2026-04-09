@@ -1,0 +1,76 @@
+<!-- ============================================================ -->
+<!--  index.html 需要修改两处                                      -->
+<!-- ============================================================ -->
+
+<!-- 
+  修改 1：把导航栏部分替换成下面这段
+  （找到 <nav class="navbar"> ... </nav>，整个替换）
+-->
+
+<nav class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">T</div>
+        <span>接口自动化测试平台</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:16px;">
+        <div class="navbar-links">
+            <a href="/" class="active">用例管理</a>
+            <a href="#" onclick="toggleBatchPanel()">批量执行</a>
+        </div>
+        <div id="userInfo" style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:13px; color:var(--text-secondary);" id="navUsername"></span>
+            <button class="btn btn-secondary btn-sm" onclick="doLogout()">退出</button>
+        </div>
+    </div>
+</nav>
+
+<!-- 
+  修改 2：在 <script> 标签最开头（const API_BASE = ''; 之后），添加以下代码
+-->
+
+<script>
+    // ===== 登录状态检查 =====
+    const token = localStorage.getItem('token');
+    const username = localStorage.getItem('username');
+
+    // 如果没有 token，跳转到登录页
+    if (!token) {
+        window.location.href = '/login';
+    }
+
+    // 显示用户名
+    document.addEventListener('DOMContentLoaded', function() {
+        const navUser = document.getElementById('navUsername');
+        if (navUser && username) {
+            navUser.textContent = username;
+        }
+    });
+
+    // 退出登录
+    async function doLogout() {
+        await fetch('/api/logout', { method: 'POST' });
+        localStorage.removeItem('token');
+        localStorage.removeItem('username');
+        localStorage.removeItem('role');
+        window.location.href = '/login';
+    }
+
+    // ===== 改造 fetch 请求，自动带上 token =====
+    // 把原来所有的 fetch 调用都不需要改
+    // 只需要在 submitCase() 和 deleteCase() 和 runCase() 里的 fetch 加上 headers
+    // 
+    // 最简单的方式：覆盖全局 fetch，自动注入 token
+    const _originalFetch = window.fetch;
+    window.fetch = function(url, options = {}) {
+        if (!options.headers) {
+            options.headers = {};
+        }
+        // 如果是对象形式的 headers
+        if (typeof options.headers === 'object' && !(options.headers instanceof Headers)) {
+            if (token && !options.headers['Authorization']) {
+                options.headers['Authorization'] = 'Bearer ' + token;
+            }
+        }
+        return _originalFetch.call(this, url, options);
+    };
+</script>

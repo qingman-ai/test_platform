@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>接口自动化测试平台</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0f1117;
+            --bg-secondary: #1a1d27;
+            --bg-card: #21253a;
+            --bg-hover: #2a2f45;
+            --border: #2e3348;
+            --text-primary: #e8eaf0;
+            --text-secondary: #8b90a5;
+            --text-muted: #5c6078;
+            --accent: #6c8dfa;
+            --accent-hover: #5a7df0;
+            --accent-glow: rgba(108, 141, 250, 0.15);
+            --green: #4ade80;
+            --green-bg: rgba(74, 222, 128, 0.1);
+            --red: #f87171;
+            --red-bg: rgba(248, 113, 113, 0.1);
+            --orange: #fb923c;
+            --orange-bg: rgba(251, 146, 60, 0.1);
+            --yellow: #facc15;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* ===== 顶部导航 ===== */
+        .navbar {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 0 32px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 18px;
+            letter-spacing: -0.5px;
+        }
+        .navbar-brand .logo {
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, var(--accent), #a78bfa);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; font-weight: 700; color: #fff;
+        }
+        .navbar-links {
+            display: flex; gap: 8px;
+        }
+        .navbar-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .navbar-links a:hover, .navbar-links a.active {
+            color: var(--text-primary);
+            background: var(--bg-hover);
+        }
+
+        /* ===== 主体布局 ===== */
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        /* ===== 统计卡片 ===== */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 24px;
+        }
+        .stat-card .label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .stat-card .value.green { color: var(--green); }
+        .stat-card .value.red { color: var(--red); }
+        .stat-card .value.orange { color: var(--orange); }
+
+        /* ===== 工具栏 ===== */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .toolbar-left {
+            display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+        }
+        .filter-input {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+        .filter-input:focus {
+            border-color: var(--accent);
+        }
+        .filter-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .btn {
+            padding: 8px 18px;
+            border-radius: 8px;
+            border: none;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Noto Sans SC', sans-serif;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 4px 16px var(--accent-glow);
+        }
+        .btn-secondary {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover {
+            border-color: var(--accent);
+        }
+        .btn-danger {
+            background: var(--red-bg);
+            color: var(--red);
+            border: 1px solid transparent;
+        }
+        .btn-danger:hover {
+            border-color: var(--red);
+        }
+        .btn-success {
+            background: var(--green-bg);
+            color: var(--green);
+            border: 1px solid transparent;
+        }
+        .btn-success:hover {
+            border-color: var(--green);
+        }
+        .btn-sm {
+            padding: 5px 12px;
+            font-size: 12px;
+        }
+
+        /* ===== 表格 ===== */
+        .table-wrap {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        thead th {
+            background: var(--bg-secondary);
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+        tbody td {
+            padding: 12px 16px;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        tbody tr:hover {
+            background: var(--bg-hover);
+        }
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .method-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .method-GET { background: var(--green-bg); color: var(--green); }
+        .method-POST { background: var(--orange-bg); color: var(--orange); }
+        .method-PUT { background: rgba(96, 165, 250, 0.1); color: #60a5fa; }
+        .method-DELETE { background: var(--red-bg); color: var(--red); }
+
+        .priority-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: var(--bg-hover);
+            color: var(--text-secondary);
+        }
+        .tag-chip {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: var(--accent-glow);
+            color: var(--accent);
+            margin-right: 4px;
+            display: inline-block;
+        }
+        .url-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-secondary);
+            max-width: 260px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .actions-cell {
+            display: flex; gap: 6px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+
+        /* ===== 弹窗 / 模态框 ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 60px;
+            overflow-y: auto;
+        }
+        .modal-overlay.open {
+            display: flex;
+        }
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            width: 640px;
+            max-width: 95vw;
+            margin-bottom: 40px;
+            animation: slideUp 0.25s ease;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+        .modal-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .modal-close {
+            background: none; border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+        .modal-close:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+        .modal-body {
+            padding: 24px;
+        }
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* ===== 表单 ===== */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+        .form-group label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 9px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: var(--accent);
+        }
+        .form-group textarea {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            resize: vertical;
+            min-height: 70px;
+        }
+        .form-group .hint {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* ===== 执行结果弹窗 ===== */
+        .result-pass {
+            background: var(--green-bg);
+            color: var(--green);
+            padding: 16px 20px;
+            border-radius: 10px;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+        .result-fail {
+            background: var(--red-bg);
+            color: var(--red);
+            padding: 16px 20px;
+            border-radius: 10px;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
+        /* ===== Toast 提示 ===== */
+        .toast-container {
+            position: fixed;
+            top: 76px;
+            right: 32px;
+            z-index: 300;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .toast {
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            animation: toastIn 0.3s ease;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+        .toast.success { background: #166534; color: #bbf7d0; }
+        .toast.error { background: #7f1d1d; color: #fecaca; }
+        .toast.info { background: #1e3a5f; color: #bfdbfe; }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(40px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* ===== 批量执行面板 ===== */
+        .batch-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            display: none;
+        }
+        .batch-panel.show { display: block; }
+        .batch-panel h4 { margin-bottom: 12px; font-size: 14px; }
+        .batch-filters {
+            display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+        }
+        .progress-bar-wrap {
+            height: 6px;
+            background: var(--bg-hover);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 12px;
+        }
+        .progress-bar {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 768px) {
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .form-grid { grid-template-columns: 1fr; }
+            .container { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- 导航栏 -->
+<nav class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">T</div>
+        <span>接口自动化测试平台</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:16px;">
+        <div class="navbar-links">
+            <a href="/" class="active">用例管理</a>
+            <a href="#" onclick="toggleBatchPanel()">批量执行</a>
+        </div>
+        <div id="userInfo" style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:13px; color:var(--text-secondary);" id="navUsername"></span>
+            <button class="btn btn-secondary btn-sm" onclick="doLogout()">退出</button>
+        </div>
+    </div>
+</nav>
+
+
+<!-- Toast 容器 -->
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="container">
+
+    <!-- 统计卡片 -->
+    <div class="stats-row" id="statsRow">
+        <div class="stat-card">
+            <div class="label">总用例数</div>
+            <div class="value" id="statTotal">-</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">模块数</div>
+            <div class="value green" id="statModules">-</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">高优先级 (P1)</div>
+            <div class="value orange" id="statP1">-</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">GET / POST</div>
+            <div class="value" id="statMethods">-</div>
+        </div>
+    </div>
+
+    <!-- 批量执行面板 -->
+    <div class="batch-panel" id="batchPanel">
+        <h4>批量执行用例</h4>
+        <div class="batch-filters">
+            <input class="filter-input" id="batchModule" placeholder="模块筛选">
+            <input class="filter-input" id="batchPriority" placeholder="优先级" type="number" min="1" max="10" style="width:100px">
+            <input class="filter-input" id="batchTag" placeholder="标签筛选">
+            <button class="btn btn-primary" onclick="startBatchRun()">▶ 开始批量执行</button>
+        </div>
+        <div id="batchProgress" style="display:none; margin-top: 16px;">
+            <div style="font-size:13px; color:var(--text-secondary);">
+                执行进度: <span id="batchProgressText">0/0</span>
+                &nbsp; 状态: <span id="batchStatusText">running</span>
+            </div>
+            <div class="progress-bar-wrap">
+                <div class="progress-bar" id="batchProgressBar" style="width:0%"></div>
+            </div>
+            <div style="margin-top:10px;">
+                <a id="batchReportLink" href="#" target="_blank" style="display:none; color:var(--accent); font-size:13px;">查看详细报告 →</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 工具栏 -->
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <input class="filter-input" id="filterModule" placeholder="模块筛选" oninput="loadCases()">
+            <input class="filter-input" id="filterPriority" placeholder="优先级" type="number" min="1" max="10" style="width:100px" oninput="loadCases()">
+            <input class="filter-input" id="filterTag" placeholder="标签筛选" oninput="loadCases()">
+            <button class="btn btn-secondary" onclick="loadCases()">刷新</button>
+        </div>
+        <button class="btn btn-primary" onclick="openCreateModal()">+ 新建用例</button>
+    </div>
+
+    <!-- 用例表格 -->
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>用例名称</th>
+                    <th>方法</th>
+                    <th>URL</th>
+                    <th>模块</th>
+                    <th>优先级</th>
+                    <th>标签</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="caseTableBody">
+                <tr>
+                    <td colspan="8" class="empty-state">
+                        <div class="icon">📋</div>
+                        <div>加载中...</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 新建/编辑用例 弹窗 -->
+<div class="modal-overlay" id="caseModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="modalTitle">新建用例</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>用例名称 *</label>
+                    <input id="formName" placeholder="如：登录接口测试">
+                </div>
+                <div class="form-group">
+                    <label>请求方法 *</label>
+                    <select id="formMethod">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PUT">PUT</option>
+                        <option value="DELETE">DELETE</option>
+                    </select>
+                </div>
+                <div class="form-group full">
+                    <label>请求 URL *</label>
+                    <input id="formUrl" placeholder="http://localhost:8000/demo_login">
+                </div>
+                <div class="form-group">
+                    <label>模块</label>
+                    <input id="formModule" placeholder="default" value="default">
+                </div>
+                <div class="form-group">
+                    <label>优先级</label>
+                    <input id="formPriority" type="number" min="1" max="10" value="1">
+                </div>
+                <div class="form-group full">
+                    <label>标签</label>
+                    <input id="formTags" placeholder="多个标签用逗号分隔，如：冒烟,回归">
+                </div>
+                <div class="form-group full">
+                    <label>请求头 (JSON)</label>
+                    <textarea id="formHeaders" placeholder='{"Content-Type": "application/json"}'></textarea>
+                </div>
+                <div class="form-group full">
+                    <label>查询参数 (JSON)</label>
+                    <textarea id="formParams" placeholder='{"user": "test"}'></textarea>
+                </div>
+                <div class="form-group full">
+                    <label>请求体 (JSON)</label>
+                    <textarea id="formBody" placeholder='{"username": "test", "password": "123456"}'></textarea>
+                </div>
+                <div class="form-group">
+                    <label>预期状态码</label>
+                    <input id="formExpectedStatus" type="number" placeholder="200" value="200">
+                </div>
+                <div class="form-group">
+                    <label>最大响应时间 (秒)</label>
+                    <input id="formMaxTime" type="number" step="0.1" placeholder="5">
+                </div>
+                <div class="form-group full">
+                    <label>关键字断言</label>
+                    <input id="formKeyword" placeholder="响应体必须包含的关键字">
+                </div>
+                <div class="form-group full">
+                    <label>JSON 字段断言</label>
+                    <textarea id="formJsonAssert" placeholder='{"code": 0, "message": "成功"}'></textarea>
+                </div>
+                <div class="form-group full">
+                    <label>变量提取规则 (JSON)</label>
+                    <textarea id="formExtractVars" placeholder='{"token": "token"}'></textarea>
+                    <span class="hint">从响应 JSON 中提取变量，供后续用例使用</span>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+            <button class="btn btn-primary" id="formSubmitBtn" onclick="submitCase()">创建</button>
+        </div>
+    </div>
+</div>
+
+<!-- 执行结果弹窗 -->
+<div class="modal-overlay" id="resultModal">
+    <div class="modal" style="width:500px">
+        <div class="modal-header">
+            <h3>执行结果</h3>
+            <button class="modal-close" onclick="closeResultModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="resultContent">
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeResultModal()">关闭</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_BASE = '';  // 同域，留空即可
+    // ===== 登录状态检查 =====
+    const token = localStorage.getItem('token');
+    const username = localStorage.getItem('username');
+
+    // 如果没有 token，跳转到登录页
+    if (!token) {
+        window.location.href = '/login';
+    }
+
+    // 显示用户名
+    document.addEventListener('DOMContentLoaded', function() {
+        const navUser = document.getElementById('navUsername');
+        if (navUser && username) {
+            navUser.textContent = username;
+        }
+    });
+
+    // 退出登录
+    async function doLogout() {
+        await fetch('/api/logout', { method: 'POST' });
+        localStorage.removeItem('token');
+        localStorage.removeItem('username');
+        localStorage.removeItem('role');
+        window.location.href = '/login';
+    }
+
+    // ===== 改造 fetch 请求，自动带上 token =====
+    // 把原来所有的 fetch 调用都不需要改
+    // 只需要在 submitCase() 和 deleteCase() 和 runCase() 里的 fetch 加上 headers
+    // 
+    // 最简单的方式：覆盖全局 fetch，自动注入 token
+    const _originalFetch = window.fetch;
+    window.fetch = function(url, options = {}) {
+        if (!options.headers) {
+            options.headers = {};
+        }
+        // 如果是对象形式的 headers
+        if (typeof options.headers === 'object' && !(options.headers instanceof Headers)) {
+            if (token && !options.headers['Authorization']) {
+                options.headers['Authorization'] = 'Bearer ' + token;
+            }
+        }
+        return _originalFetch.call(this, url, options);
+    }; 
+
+    // ========== 工具函数 ==========
+    function showToast(msg, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = 'toast ' + type;
+        toast.textContent = msg;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    function safeJsonParse(str) {
+        if (!str || str.trim() === '') return null;
+        try { return JSON.parse(str); }
+        catch (e) {
+            showToast('JSON 格式错误: ' + e.message, 'error');
+            return undefined; // undefined 表示解析失败
+        }
+    }
+
+    // ========== 加载用例列表 ==========
+    let allCases = [];
+
+    async function loadCases() {
+        const module = document.getElementById('filterModule').value;
+        const priority = document.getElementById('filterPriority').value;
+        const tag = document.getElementById('filterTag').value;
+
+        let url = API_BASE + '/cases/?';
+        if (module) url += 'module=' + encodeURIComponent(module) + '&';
+        if (priority) url += 'priority=' + priority + '&';
+        if (tag) url += 'tag=' + encodeURIComponent(tag) + '&';
+
+        try {
+            const resp = await fetch(url);
+            const data = await resp.json();
+            allCases = data;
+            renderTable(data);
+            updateStats(data);
+        } catch (e) {
+            showToast('加载用例失败: ' + e.message, 'error');
+        }
+    }
+
+    function renderTable(cases) {
+        const tbody = document.getElementById('caseTableBody');
+        if (cases.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" class="empty-state">
+                <div class="icon">📋</div>
+                <div>暂无用例，点击"新建用例"开始</div>
+            </td></tr>`;
+            return;
+        }
+        tbody.innerHTML = cases.map(c => `
+            <tr>
+                <td style="font-family:'JetBrains Mono',monospace; color:var(--text-muted);">#${c.id}</td>
+                <td style="font-weight:500;">${escHtml(c.name)}</td>
+                <td><span class="method-badge method-${c.method}">${c.method}</span></td>
+                <td><span class="url-text" title="${escHtml(c.url)}">${escHtml(c.url)}</span></td>
+                <td>${escHtml(c.module || 'default')}</td>
+                <td><span class="priority-badge">P${c.priority || 1}</span></td>
+                <td>${(c.tags || '').split(',').filter(Boolean).map(t => '<span class="tag-chip">' + escHtml(t.trim()) + '</span>').join('')}</td>
+                <td>
+                    <div class="actions-cell">
+                        <button class="btn btn-success btn-sm" onclick="runCase(${c.id})">▶ 执行</button>
+                        <button class="btn btn-secondary btn-sm" onclick="openEditModal(${c.id})">编辑</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteCase(${c.id})">删除</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function updateStats(cases) {
+        document.getElementById('statTotal').textContent = cases.length;
+        const modules = new Set(cases.map(c => c.module || 'default'));
+        document.getElementById('statModules').textContent = modules.size;
+        const p1 = cases.filter(c => c.priority === 1).length;
+        document.getElementById('statP1').textContent = p1;
+        const getCount = cases.filter(c => c.method === 'GET').length;
+        const postCount = cases.filter(c => c.method === 'POST').length;
+        document.getElementById('statMethods').textContent = getCount + ' / ' + postCount;
+    }
+
+    function escHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ========== 新建/编辑用例 ==========
+    let editingCaseId = null;
+
+    function openCreateModal() {
+        editingCaseId = null;
+        document.getElementById('modalTitle').textContent = '新建用例';
+        document.getElementById('formSubmitBtn').textContent = '创建';
+        clearForm();
+        document.getElementById('caseModal').classList.add('open');
+    }
+
+    function openEditModal(caseId) {
+        const c = allCases.find(x => x.id === caseId);
+        if (!c) return;
+        editingCaseId = caseId;
+        document.getElementById('modalTitle').textContent = '编辑用例 #' + caseId;
+        document.getElementById('formSubmitBtn').textContent = '保存';
+
+        document.getElementById('formName').value = c.name || '';
+        document.getElementById('formMethod').value = c.method || 'GET';
+        document.getElementById('formUrl').value = c.url || '';
+        document.getElementById('formModule').value = c.module || 'default';
+        document.getElementById('formPriority').value = c.priority || 1;
+        document.getElementById('formTags').value = c.tags || '';
+        document.getElementById('formHeaders').value = c.headers ? JSON.stringify(c.headers, null, 2) : '';
+        document.getElementById('formParams').value = c.params ? JSON.stringify(c.params, null, 2) : '';
+        document.getElementById('formBody').value = c.body ? JSON.stringify(c.body, null, 2) : '';
+        document.getElementById('formExpectedStatus').value = c.expected_status || '';
+        document.getElementById('formMaxTime').value = c.assert_max_time || '';
+        document.getElementById('formKeyword').value = c.assert_keyword || '';
+        document.getElementById('formJsonAssert').value = c.assert_json_field ? JSON.stringify(c.assert_json_field, null, 2) : '';
+        document.getElementById('formExtractVars').value = c.extract_vars ? JSON.stringify(c.extract_vars, null, 2) : '';
+
+        document.getElementById('caseModal').classList.add('open');
+    }
+
+    function closeModal() {
+        document.getElementById('caseModal').classList.remove('open');
+    }
+
+    function clearForm() {
+        ['formName','formUrl','formTags','formHeaders','formParams','formBody','formKeyword','formJsonAssert','formExtractVars'].forEach(id => {
+            document.getElementById(id).value = '';
+        });
+        document.getElementById('formMethod').value = 'GET';
+        document.getElementById('formModule').value = 'default';
+        document.getElementById('formPriority').value = 1;
+        document.getElementById('formExpectedStatus').value = 200;
+        document.getElementById('formMaxTime').value = '';
+    }
+
+    async function submitCase() {
+        const name = document.getElementById('formName').value.trim();
+        const method = document.getElementById('formMethod').value;
+        const url = document.getElementById('formUrl').value.trim();
+
+        if (!name || !method || !url) {
+            showToast('请填写必填字段: 名称、方法、URL', 'error');
+            return;
+        }
+
+        const headers = safeJsonParse(document.getElementById('formHeaders').value);
+        if (headers === undefined) return;
+        const params = safeJsonParse(document.getElementById('formParams').value);
+        if (params === undefined) return;
+        const body = safeJsonParse(document.getElementById('formBody').value);
+        if (body === undefined) return;
+        const assertJsonField = safeJsonParse(document.getElementById('formJsonAssert').value);
+        if (assertJsonField === undefined) return;
+        const extractVars = safeJsonParse(document.getElementById('formExtractVars').value);
+        if (extractVars === undefined) return;
+
+        const payload = {
+            name,
+            method,
+            url,
+            headers: headers,
+            params: params,
+            body: body,
+            expected_status: parseInt(document.getElementById('formExpectedStatus').value) || null,
+            expected_body: null,
+            module: document.getElementById('formModule').value.trim() || 'default',
+            priority: parseInt(document.getElementById('formPriority').value) || 1,
+            tags: document.getElementById('formTags').value.trim() || null,
+            assert_keyword: document.getElementById('formKeyword').value.trim() || null,
+            assert_json_field: assertJsonField,
+            assert_max_time: parseFloat(document.getElementById('formMaxTime').value) || null,
+            extract_vars: extractVars,
+        };
+
+        try {
+            let resp;
+            if (editingCaseId) {
+                resp = await fetch(API_BASE + '/cases/' + editingCaseId, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } else {
+                resp = await fetch(API_BASE + '/cases/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            }
+            if (resp.ok) {
+                showToast(editingCaseId ? '用例已更新' : '用例已创建', 'success');
+                closeModal();
+                loadCases();
+            } else {
+                const err = await resp.json();
+                showToast('操作失败: ' + JSON.stringify(err), 'error');
+            }
+        } catch (e) {
+            showToast('请求失败: ' + e.message, 'error');
+        }
+    }
+
+    // ========== 删除用例 ==========
+    async function deleteCase(caseId) {
+        if (!confirm('确定要删除用例 #' + caseId + ' 吗？')) return;
+        try {
+            const resp = await fetch(API_BASE + '/cases/' + caseId, { method: 'DELETE' });
+            if (resp.ok) {
+                showToast('用例已删除', 'success');
+                loadCases();
+            }
+        } catch (e) {
+            showToast('删除失败: ' + e.message, 'error');
+        }
+    }
+
+    // ========== 执行用例 ==========
+    async function runCase(caseId) {
+        showToast('正在执行用例 #' + caseId + '...', 'info');
+        try {
+            const resp = await fetch(API_BASE + '/run/' + caseId, { method: 'POST' });
+            const data = await resp.json();
+            showRunResult(data);
+        } catch (e) {
+            showToast('执行失败: ' + e.message, 'error');
+        }
+    }
+
+    function showRunResult(data) {
+        const container = document.getElementById('resultContent');
+        if (Array.isArray(data)) {
+            container.innerHTML = data.map(r => `
+                <div class="${r.result === 'PASS' ? 'result-pass' : 'result-fail'}">
+                    <div>用例 #${r.case_id} — ${r.result}</div>
+                    ${r.error_message ? '<div style="margin-top:8px; font-size:12px; opacity:0.8;">' + escHtml(r.error_message) + '</div>' : ''}
+                    ${r.params ? '<div style="margin-top:6px; font-size:11px; font-family:JetBrains Mono,monospace; opacity:0.7;">参数: ' + escHtml(JSON.stringify(r.params)) + '</div>' : ''}
+                </div>
+            `).join('');
+        } else if (data.error) {
+            container.innerHTML = '<div class="result-fail">' + escHtml(data.error) + '</div>';
+        } else {
+            container.innerHTML = '<pre style="font-size:12px; color:var(--text-secondary);">' + escHtml(JSON.stringify(data, null, 2)) + '</pre>';
+        }
+        document.getElementById('resultModal').classList.add('open');
+    }
+
+    function closeResultModal() {
+        document.getElementById('resultModal').classList.remove('open');
+    }
+
+    // ========== 批量执行 ==========
+    function toggleBatchPanel() {
+        document.getElementById('batchPanel').classList.toggle('show');
+    }
+
+    async function startBatchRun() {
+        const module = document.getElementById('batchModule').value;
+        const priority = document.getElementById('batchPriority').value;
+        const tag = document.getElementById('batchTag').value;
+
+        let url = API_BASE + '/run/?';
+        if (module) url += 'module=' + encodeURIComponent(module) + '&';
+        if (priority) url += 'priority=' + priority + '&';
+        if (tag) url += 'tag=' + encodeURIComponent(tag) + '&';
+
+        try {
+            const resp = await fetch(url, { method: 'POST' });
+            const data = await resp.json();
+            if (data.batch_id) {
+                showToast('批量任务已启动, ID: ' + data.batch_id, 'success');
+                document.getElementById('batchProgress').style.display = 'block';
+                pollBatchStatus(data.batch_id);
+            }
+        } catch (e) {
+            showToast('启动失败: ' + e.message, 'error');
+        }
+    }
+
+    async function pollBatchStatus(batchId) {
+        const poll = async () => {
+            try {
+                const resp = await fetch(API_BASE + '/run/status/' + batchId);
+                const data = await resp.json();
+
+                document.getElementById('batchProgressText').textContent = data.finished_cases + '/' + data.total_cases;
+                document.getElementById('batchStatusText').textContent = data.status;
+
+                const pct = data.total_cases > 0 ? (data.finished_cases / data.total_cases * 100) : 0;
+                document.getElementById('batchProgressBar').style.width = pct + '%';
+
+                if (data.status === 'finished') {
+                    showToast('批量执行完成!', 'success');
+                    const link = document.getElementById('batchReportLink');
+                    link.href = '/run/report/html/' + batchId;
+                    link.style.display = 'inline';
+                    return;
+                }
+                setTimeout(poll, 1500);
+            } catch (e) {
+                setTimeout(poll, 3000);
+            }
+        };
+        poll();
+    }
+
+    // ========== 初始化 ==========
+    document.addEventListener('DOMContentLoaded', loadCases);
+</script>
+</body>
+</html>

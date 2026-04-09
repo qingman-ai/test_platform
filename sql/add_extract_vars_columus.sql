@@ -1,0 +1,1 @@
+ALTER TABLE test_case ADD COLUMN extract_vars TEXT NULL;

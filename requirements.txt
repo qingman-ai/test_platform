@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+sqlalchemy
+pymysql
+pyjwt
+passlib
+bcrypt==4.0.1
+requests
+jinja2

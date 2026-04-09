@@ -1,0 +1,168 @@
+<!-- templates/report.html -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>   <!-- 这是批量执行报告的HTML模板，使用Jinja2语法渲染数据 ,head用来放页面的元数据和样式 以及JS库-->
+    <meta charset="UTF-8">
+    <title>批量执行报告</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .pass { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        h2, h3 { margin-top: 30px; }
+    </style>
+    <!-- 引入 ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+</head>
+<body>  <!-- 页面主体内容，显示批量执行的统计信息和每个用例的执行结果 -->
+    <div id="resultsData" style="display:none;">{{ batch.results_json }}</div>
+    <h2>批量执行报告 — 批次ID: {{ batch.batch_id }}</h2>
+    <p>模块: {{ batch.module }} | 优先级: {{ batch.priority }} | 标签: {{ batch.tag }}</p>
+    <p>总用例数: {{ batch.total_cases }} | 已完成: {{ batch.finished_cases }} | 失败数: {{ batch.failed_count }}</p>
+    <button id="exportBtn">导出 PDF</button>
+
+    <!-- 失败率饼图 -->
+    <h3>执行统计</h3>
+    <div id="chart" style="width: 600px; height: 400px;"></div>
+
+    <!-- 所有用例表格 -->
+    <h3>用例执行详情</h3>
+    <table>
+        <tr>
+            <th>用例ID</th>
+            <th>执行参数</th>
+            <th>执行结果</th>
+            <th>错误信息</th>
+        </tr>
+        {% for case in batch.results %}
+        <tr>
+            <td>{{ case.case_id }}</td>
+            <td>{{ case.params if case.params else "-" }}</td>
+            <td class="{{ 'pass' if case.result=='PASS' else 'fail' }}">{{ case.result }}</td>
+            <td>{{ case.error_message if case.error_message else '-' }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <!-- 失败用例单独统计 -->
+    {% if batch.failed_count > 0 %}
+    <h3>失败用例汇总</h3>
+    <table>
+        <tr>
+            <th>用例ID</th>
+            <th>执行参数</th>
+            <th>错误信息</th>
+        </tr>
+        {% for case in batch.failed_cases %}
+        <tr>
+            <td>{{ case.case_id }}</td>
+            <td>{{ case.params if case.params else "-" }}</td>
+            <td>{{ case.error_message if case.error_message else '-' }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    <h3>模块失败率统计</h3>
+    <div id="moduleChart" style="width: 800px; height: 400px;"></div>
+
+    <!-- ECharts 绘制失败率饼图 -->
+    <script type="text/javascript">
+        var resultsText = document.getElementById('resultsData').textContent;
+        var results = JSON.parse(resultsText);
+        var passCount = 0;
+        var failCount = 0;
+        for (var i=0; i<results.length; i++) {
+            if (results[i].result === "PASS") { passCount += 1; }
+            else { failCount += 1; }
+        }
+
+        var chartDom = document.getElementById('chart');
+        var myChart = echarts.init(chartDom);
+
+        var option = {
+            title: { text: '测试执行统计', left: 'center' },
+            tooltip: { trigger: 'item' },
+            legend: { orient: 'vertical', left: 'left' },
+            series: [{
+                name: '结果',
+                type: 'pie',
+                radius: '50%',
+                data: [
+                    {value: passCount, name: 'PASS'},
+                    {value: failCount, name: 'FAIL'}
+                ],
+                emphasis: {
+                    itemStyle: {
+                        shadowBlur: 10,
+                        shadowOffsetX: 0,
+                        shadowColor: 'rgba(0,0,0,0.5)'
+                    }
+                }
+            }]
+        };
+
+        myChart.setOption(option);
+
+        var moduleStats = {};
+        results.forEach(function(item){
+            var moduleName = item.module || 'default';
+            if(!moduleStats[moduleName]){
+                moduleStats[moduleName] = {PASS:0, FAIL:0};
+            }
+            if(item.result === 'PASS'){
+                moduleStats[moduleName].PASS += 1;
+            } else {
+                moduleStats[moduleName].FAIL += 1;
+            }
+        });
+
+        var moduleNames = Object.keys(moduleStats);
+        var passCounts = moduleNames.map(m => moduleStats[m].PASS);
+        var failCounts = moduleNames.map(m => moduleStats[m].FAIL);
+
+        var moduleChartDom = document.getElementById('moduleChart');
+        var moduleChart = echarts.init(moduleChartDom);
+
+        var moduleOption = {
+            tooltip: { trigger: 'axis' },
+            legend: { data: ['PASS','FAIL'] },
+            xAxis: { type: 'category', data: moduleNames },
+            yAxis: { type: 'value' },
+            series: [
+                { name: 'PASS', type: 'bar', stack: 'total', data: passCounts },
+                { name: 'FAIL', type: 'bar', stack: 'total', data: failCounts, itemStyle:{color:'red'} }
+            ]
+        };
+
+        moduleChart.setOption(moduleOption);
+
+        document.getElementById('exportBtn').addEventListener('click', function(){
+            html2canvas(document.body).then(function(canvas){
+                var imgData = canvas.toDataURL('image/png');
+                var pdf = new jspdf.jsPDF('p', 'pt', 'a4');
+                var imgWidth = 595.28;
+                var pageHeight = 841.89;
+                var imgHeight = canvas.height * imgWidth / canvas.width;
+                var heightLeft = imgHeight;
+                var position = 0;
+
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+                pdf.save("batch_report.pdf");
+            });
+        });
+    </script>
+</body>
+</html>

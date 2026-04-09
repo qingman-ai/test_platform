@@ -1,0 +1,87 @@
+# .github/workflows/ci.yml
+# GitHub Actions 自动化工作流：每次推送代码时自动运行测试
+
+name: 测试平台 CI
+
+# 触发条件：推送到 main 分支，或提交 PR 到 main 分支
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+  # 允许手动触发（在 GitHub 页面上点按钮触发）
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # MySQL 服务（GitHub Actions 自带 Docker 支持）
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: Root@123456
+          MYSQL_DATABASE: test_platform
+        ports:
+          - 3306:3306
+        # 等 MySQL 启动完成
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      # 1. 拉取代码
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      # 2. 安装 Python
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # 3. 安装依赖
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest httpx
+
+      # 4. 等待 MySQL 就绪
+      - name: 等待 MySQL 就绪
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 -u root -pRoot@123456 --silent 2>/dev/null; then
+              echo "MySQL is ready!"
+              break
+            fi
+            echo "Waiting for MySQL... ($i)"
+            sleep 2
+          done
+
+      # 5. 运行测试
+      - name: 运行测试
+        env:
+          DATABASE_URL: mysql+pymysql://root:Root%40123456@127.0.0.1:3306/test_platform
+        run: |
+          python -m pytest tests/ -v --tb=short
+
+      # 6. 启动服务并验证
+      - name: 启动服务验证
+        env:
+          DATABASE_URL: mysql+pymysql://root:Root%40123456@127.0.0.1:3306/test_platform
+        run: |
+          # 后台启动 FastAPI
+          python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+          sleep 5
+
+          # 验证服务正常启动
+          curl -f http://localhost:8000/cases/ || exit 1
+          echo "服务启动验证通过！"
+
+          # 停止服务
+          kill %1
