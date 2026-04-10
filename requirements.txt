@@ -11,3 +11,4 @@ apscheduler
 openpyxl
 pyyaml
 allure-pytest
+python-multipart
