@@ -1,0 +1,5 @@
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:2710 BEGIN (implicit)
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:1846 SELECT test_case.id AS test_case_id, test_case.name AS test_case_name, test_case.method AS test_case_method, test_case.url AS test_case_url, test_case.headers AS test_case_headers, test_case.params AS test_case_params, test_case.param_sets AS test_case_param_sets, test_case.expected_status AS test_case_expected_status, test_case.expected_body AS test_case_expected_body, test_case.created_at AS test_case_created_at, test_case.body AS test_case_body, test_case.assert_keyword AS test_case_assert_keyword, test_case.assert_json_field AS test_case_assert_json_field, test_case.assert_max_time AS test_case_assert_max_time, test_case.extract_vars AS test_case_extract_vars, test_case.module AS test_case_module, test_case.priority AS test_case_priority, test_case.tags AS test_case_tags 
+FROM test_case
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:1846 [generated in 0.00014s] {}
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:2713 ROLLBACK

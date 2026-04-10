@@ -1,0 +1,4 @@
+2026-04-10 16:49:14,419 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-04-10 16:49:14,419 INFO sqlalchemy.engine.Engine SELECT 1 AS value
+2026-04-10 16:49:14,421 INFO sqlalchemy.engine.Engine [generated in 0.00033s] {}
+2026-04-10 16:49:14,421 INFO sqlalchemy.engine.Engine ROLLBACK

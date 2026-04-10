@@ -1,0 +1,7 @@
+2026-04-10 16:47:50,574 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-04-10 16:47:50,576 INFO sqlalchemy.engine.Engine SELECT user.id AS user_id, user.username AS user_username, user.password_hash AS user_password_hash, user.`role` AS user_role, user.created_at AS user_created_at 
+FROM user 
+WHERE user.username = %(username_1)s 
+ LIMIT %(param_1)s
+2026-04-10 16:47:50,576 INFO sqlalchemy.engine.Engine [generated in 0.00016s] {'username_1': 'testuser_ci', 'param_1': 1}
+2026-04-10 16:47:50,580 INFO sqlalchemy.engine.Engine ROLLBACK

@@ -30,3 +30,24 @@ class TestCaseResponse(TestCaseCreate):
 
     class Config:
         from_attributes = True
+
+class ScheduleJobCreate(BaseModel):
+    name: str
+    cron_expr: str
+    module: Optional[str] = None
+    enabled: int = 1
+
+class ScheduleJobResponse(BaseModel):
+    id: int
+    name: str
+    cron_expr: str
+    module: Optional[str] = None
+    enabled: int
+    last_run_at: Optional[str] = None
+    last_run_status: Optional[str] = None
+    last_batch_id: Optional[int] = None
+    created_by: Optional[str] = None
+    created_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True       

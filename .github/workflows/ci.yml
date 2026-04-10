@@ -1,5 +1,5 @@
 # .github/workflows/ci.yml
-# GitHub Actions 自动化工作流：每次推送代码时自动运行测试
+# GitHub Actions 自动化工作流：每次推送代码时自动运行测试并生成 Allure 报告
 
 name: 测试平台 CI
 
@@ -49,7 +49,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest httpx
+          pip install pytest httpx allure-pytest
 
       # 4. 等待 MySQL 就绪
       - name: 等待 MySQL 就绪
@@ -63,14 +63,22 @@ jobs:
             sleep 2
           done
 
-      # 5. 运行测试
+      # 5. 运行测试（生成 Allure 数据）
       - name: 运行测试
         env:
           DATABASE_URL: mysql+pymysql://root:Root%40123456@127.0.0.1:3306/test_platform
         run: |
-          python -m pytest tests/ -v --tb=short
+          python -m pytest tests/ -v --tb=short --alluredir=allure-results
 
-      # 6. 启动服务并验证
+      # 6. 上传 Allure 测试报告数据
+      - name: 上传 Allure 报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: allure-results/
+
+      # 7. 启动服务并验证
       - name: 启动服务验证
         env:
           DATABASE_URL: mysql+pymysql://root:Root%40123456@127.0.0.1:3306/test_platform

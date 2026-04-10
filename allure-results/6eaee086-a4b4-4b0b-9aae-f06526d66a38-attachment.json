@@ -1,0 +1,1 @@
+{'name': 'CI测试用例', 'method': 'GET', 'url': 'http://localhost:8000/db-test', 'headers': {}, 'params': {}, 'body': {}, 'expected_status': 200, 'expected_body': None, 'module': 'ci_test', 'priority': 1, 'tags': None, 'param_sets': [], 'assert_keyword': None, 'assert_json_field': {}, 'assert_max_time': None, 'extract_vars': {}, 'id': 52}

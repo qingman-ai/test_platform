@@ -1,0 +1,43 @@
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:2710 BEGIN (implicit)
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:1846 SELECT user.id AS user_id, user.username AS user_username, user.password_hash AS user_password_hash, user.`role` AS user_role, user.created_at AS user_created_at 
+FROM user 
+WHERE user.username = %(username_1)s 
+ LIMIT %(param_1)s
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:1846 [cached since 1.031s ago] {'username_1': 'testuser_cases', 'param_1': 1}
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:2713 ROLLBACK
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:2710 BEGIN (implicit)
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:1846 SELECT user.id AS user_id, user.username AS user_username, user.password_hash AS user_password_hash, user.`role` AS user_role, user.created_at AS user_created_at 
+FROM user 
+WHERE user.username = %(username_1)s 
+ LIMIT %(param_1)s
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:1846 [cached since 1.035s ago] {'username_1': 'testuser_cases', 'param_1': 1}
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:2713 ROLLBACK
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:2710 BEGIN (implicit)
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:1846 SELECT user.id AS user_id, user.username AS user_username, user.password_hash AS user_password_hash, user.`role` AS user_role, user.created_at AS user_created_at 
+FROM user 
+WHERE user.username = %(username_1)s 
+ LIMIT %(param_1)s
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:1846 [cached since 1.213s ago] {'username_1': 'testuser_cases', 'param_1': 1}
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:1846 INSERT INTO test_case (name, method, url, headers, params, param_sets, expected_status, expected_body, body, assert_keyword, assert_json_field, assert_max_time, extract_vars, module, priority, tags) VALUES (%(name)s, %(method)s, %(url)s, %(headers)s, %(params)s, %(param_sets)s, %(expected_status)s, %(expected_body)s, %(body)s, %(assert_keyword)s, %(assert_json_field)s, %(assert_max_time)s, %(extract_vars)s, %(module)s, %(priority)s, %(tags)s)
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:1846 [cached since 0.2204s ago] {'name': '待删除用例', 'method': 'GET', 'url': 'http://localhost:8000/db-test', 'headers': None, 'params': None, 'param_sets': None, 'expected_status': 200, 'expected_body': None, 'body': None, 'assert_keyword': None, 'assert_json_field': None, 'assert_max_time': None, 'extract_vars': None, 'module': 'default', 'priority': 1, 'tags': None}
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:2716 COMMIT
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:2710 BEGIN (implicit)
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:1846 SELECT test_case.id, test_case.name, test_case.method, test_case.url, test_case.headers, test_case.params, test_case.param_sets, test_case.expected_status, test_case.expected_body, test_case.created_at, test_case.body, test_case.assert_keyword, test_case.assert_json_field, test_case.assert_max_time, test_case.extract_vars, test_case.module, test_case.priority, test_case.tags 
+FROM test_case 
+WHERE test_case.id = %(pk_1)s
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:1846 [cached since 0.2106s ago] {'pk_1': 53}
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:2713 ROLLBACK
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:2710 BEGIN (implicit)
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:1846 SELECT user.id AS user_id, user.username AS user_username, user.password_hash AS user_password_hash, user.`role` AS user_role, user.created_at AS user_created_at 
+FROM user 
+WHERE user.username = %(username_1)s 
+ LIMIT %(param_1)s
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:1846 [cached since 1.223s ago] {'username_1': 'testuser_cases', 'param_1': 1}
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:1846 SELECT test_case.id AS test_case_id, test_case.name AS test_case_name, test_case.method AS test_case_method, test_case.url AS test_case_url, test_case.headers AS test_case_headers, test_case.params AS test_case_params, test_case.param_sets AS test_case_param_sets, test_case.expected_status AS test_case_expected_status, test_case.expected_body AS test_case_expected_body, test_case.created_at AS test_case_created_at, test_case.body AS test_case_body, test_case.assert_keyword AS test_case_assert_keyword, test_case.assert_json_field AS test_case_assert_json_field, test_case.assert_max_time AS test_case_assert_max_time, test_case.extract_vars AS test_case_extract_vars, test_case.module AS test_case_module, test_case.priority AS test_case_priority, test_case.tags AS test_case_tags 
+FROM test_case 
+WHERE test_case.id = %(id_1)s 
+ LIMIT %(param_1)s
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:1846 [generated in 0.00014s] {'id_1': 53, 'param_1': 1}
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:1846 DELETE FROM test_case WHERE test_case.id = %(id)s
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:1846 [generated in 0.00013s] {'id': 53}
+[32mINFO    [0m sqlalchemy.engine.Engine:base.py:2716 COMMIT

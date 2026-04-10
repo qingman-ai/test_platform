@@ -112,3 +112,19 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)  # 存储加密后的密码
     role = Column(String(20), default="user")  # 角色：admin / user
     created_at = Column(DateTime, server_default=func.now())
+
+class ScheduleJob(Base):
+    """定时任务表：存储定时执行计划"""
+    __tablename__ = "schedule_job"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)           # 任务名称，如"每日回归-用户模块"
+    cron_expr = Column(String(100), nullable=False)      # cron表达式，如"0 2 * * *"表示每天凌晨2点
+    module = Column(String(50), nullable=True)           # 按模块筛选执行，None表示全部
+    enabled = Column(Integer, default=1)                 # 1=启用, 0=禁用
+    last_run_at = Column(DateTime, nullable=True)        # 上次执行时间
+    last_run_status = Column(String(20), nullable=True)  # 上次执行状态：success/failed
+    last_batch_id = Column(Integer, nullable=True)       # 上次执行的batch_id，方便查看报告
+    created_by = Column(String(50), nullable=True)       # 创建人
+    created_at = Column(DateTime, server_default=func.now())
+    

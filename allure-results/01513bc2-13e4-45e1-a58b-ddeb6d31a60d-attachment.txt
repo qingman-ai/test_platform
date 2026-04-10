@@ -1,0 +1,15 @@
+2026-04-10 16:49:14,431 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-04-10 16:49:14,433 INFO sqlalchemy.engine.Engine SELECT user.id AS user_id, user.username AS user_username, user.password_hash AS user_password_hash, user.`role` AS user_role, user.created_at AS user_created_at 
+FROM user 
+WHERE user.username = %(username_1)s 
+ LIMIT %(param_1)s
+2026-04-10 16:49:14,433 INFO sqlalchemy.engine.Engine [generated in 0.00022s] {'username_1': 'testuser_ci_1775810954', 'param_1': 1}
+2026-04-10 16:49:14,626 INFO sqlalchemy.engine.Engine INSERT INTO user (username, password_hash, `role`) VALUES (%(username)s, %(password_hash)s, %(role)s)
+2026-04-10 16:49:14,627 INFO sqlalchemy.engine.Engine [generated in 0.00024s] {'username': 'testuser_ci_1775810954', 'password_hash': '$2b$12$xMjN6H3nHjT9M7CnB6z8gON.mTy6t/2gVQ3ynjg0v8ZV3auekJhzC', 'role': 'user'}
+2026-04-10 16:49:14,629 INFO sqlalchemy.engine.Engine COMMIT
+2026-04-10 16:49:14,633 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-04-10 16:49:14,634 INFO sqlalchemy.engine.Engine SELECT user.id, user.username, user.password_hash, user.`role`, user.created_at 
+FROM user 
+WHERE user.id = %(pk_1)s
+2026-04-10 16:49:14,634 INFO sqlalchemy.engine.Engine [generated in 0.00013s] {'pk_1': 17}
+2026-04-10 16:49:14,635 INFO sqlalchemy.engine.Engine ROLLBACK

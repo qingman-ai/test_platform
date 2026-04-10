@@ -20,10 +20,26 @@ from fastapi import Depends
 from .auth import hash_password, verify_password, create_access_token, get_current_user
 from fastapi.responses import RedirectResponse, JSONResponse
 
+from .scheduler import init_scheduler, shutdown_scheduler, add_job_to_scheduler, remove_job_from_scheduler, parse_cron_expr
+from contextlib import asynccontextmanager
+from datetime import datetime
+
+from fastapi.responses import StreamingResponse
+from fastapi import UploadFile, File
+from .export_import import export_to_excel, export_to_yaml, import_from_excel, import_from_yaml
+from io import BytesIO
+
 templates = Jinja2Templates(directory="templates")
 templates.env.cache = {}
 
-app = FastAPI(title="测试平台")
+@asynccontextmanager
+async def lifespan(app):
+    """FastAPI 生命周期管理：启动时初始化调度器，关闭时清理"""
+    init_scheduler()
+    yield
+    shutdown_scheduler()
+
+app = FastAPI(title="测试平台", lifespan=lifespan)
 
 
 @app.get("/")
@@ -329,3 +345,200 @@ def get_me(user: models.User = Depends(get_current_user)):
         "role": user.role,
         "created_at": str(user.created_at)
     }
+
+# ===== 定时任务管理 API =====
+
+@app.get("/api/jobs", response_model=list[schemas.ScheduleJobResponse])
+def list_jobs(db: Session = Depends(get_db)):
+    """查询所有定时任务"""
+    jobs = db.query(models.ScheduleJob).order_by(models.ScheduleJob.id.desc()).all()
+    return jobs
+
+
+@app.post("/api/jobs", response_model=schemas.ScheduleJobResponse)
+def create_job(
+    data: schemas.ScheduleJobCreate,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user)
+):
+    """创建定时任务"""
+    # 先验证 cron 表达式格式
+    try:
+        parse_cron_expr(data.cron_expr)
+    except ValueError as e:
+        return JSONResponse(status_code=400, content={"detail": str(e)})
+
+    job = models.ScheduleJob(
+        name=data.name,
+        cron_expr=data.cron_expr,
+        module=data.module,
+        enabled=data.enabled,
+        created_by=user.username
+    )
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+
+    # 如果启用状态，立即加入调度器
+    if job.enabled == 1:
+        add_job_to_scheduler(job.id, job.cron_expr)
+
+    return job
+
+
+@app.put("/api/jobs/{job_id}", response_model=schemas.ScheduleJobResponse)
+def update_job(
+    job_id: int,
+    data: schemas.ScheduleJobCreate,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user)
+):
+    """编辑定时任务"""
+    job = db.query(models.ScheduleJob).filter(models.ScheduleJob.id == job_id).first()
+    if not job:
+        return JSONResponse(status_code=404, content={"detail": "任务不存在"})
+
+    try:
+        parse_cron_expr(data.cron_expr)
+    except ValueError as e:
+        return JSONResponse(status_code=400, content={"detail": str(e)})
+
+    job.name = data.name
+    job.cron_expr = data.cron_expr
+    job.module = data.module
+    job.enabled = data.enabled
+    db.commit()
+    db.refresh(job)
+
+    # 更新调度器
+    remove_job_from_scheduler(job_id)
+    if job.enabled == 1:
+        add_job_to_scheduler(job.id, job.cron_expr)
+
+    return job
+
+
+@app.delete("/api/jobs/{job_id}")
+def delete_job(
+    job_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user)
+):
+    """删除定时任务"""
+    job = db.query(models.ScheduleJob).filter(models.ScheduleJob.id == job_id).first()
+    if not job:
+        return JSONResponse(status_code=404, content={"detail": "任务不存在"})
+
+    remove_job_from_scheduler(job_id)
+    db.delete(job)
+    db.commit()
+    return {"message": f"定时任务 {job_id} 已删除"}
+
+
+@app.post("/api/jobs/{job_id}/toggle")
+def toggle_job(
+    job_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user)
+):
+    """启用/禁用定时任务"""
+    job = db.query(models.ScheduleJob).filter(models.ScheduleJob.id == job_id).first()
+    if not job:
+        return JSONResponse(status_code=404, content={"detail": "任务不存在"})
+
+    # 切换状态
+    job.enabled = 0 if job.enabled == 1 else 1
+    db.commit()
+    db.refresh(job)
+
+    # 更新调度器
+    if job.enabled == 1:
+        add_job_to_scheduler(job.id, job.cron_expr)
+    else:
+        remove_job_from_scheduler(job_id)
+
+    return {"message": f"任务已{'启用' if job.enabled == 1 else '禁用'}", "enabled": job.enabled}
+
+
+@app.post("/api/jobs/{job_id}/run")
+def run_job_now(
+    job_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user)
+):
+    """立即执行一次定时任务（手动触发）"""
+    job = db.query(models.ScheduleJob).filter(models.ScheduleJob.id == job_id).first()
+    if not job:
+        return JSONResponse(status_code=404, content={"detail": "任务不存在"})
+
+    # 创建批量执行记录
+    batch = crud.create_batch_record(db, module=job.module)
+
+    # 同步执行（手动触发不放后台，直接返回结果）
+    report = crud.run_test_cases_batch(db, batch.id, module=job.module)
+
+    # 更新任务状态
+    job.last_run_at = datetime.now()
+    job.last_batch_id = batch.id
+    if isinstance(report, dict) and report.get("failed_count", 0) == 0:
+        job.last_run_status = "success"
+    else:
+        job.last_run_status = "failed"
+    db.commit()
+
+    return {"message": "手动执行完成", "batch_id": batch.id, "status": job.last_run_status}
+
+# ===== 用例导入导出 API =====
+
+@app.get("/api/export/excel")
+def export_excel(module: Optional[str] = None, db: Session = Depends(get_db)):
+    """导出用例为 Excel 文件"""
+    output = export_to_excel(db, module)
+    filename = f"test_cases_{module or 'all'}.xlsx"
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+@app.get("/api/export/yaml")
+def export_yaml(module: Optional[str] = None, db: Session = Depends(get_db)):
+    """导出用例为 YAML 文件"""
+    yaml_content = export_to_yaml(db, module)
+    filename = f"test_cases_{module or 'all'}.yaml"
+    return StreamingResponse(
+        BytesIO(yaml_content.encode("utf-8")),
+        media_type="application/x-yaml",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+@app.post("/api/import/excel")
+async def import_excel(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user)
+):
+    """从 Excel 导入用例"""
+    if not file.filename.endswith((".xlsx", ".xls")):
+        return JSONResponse(status_code=400, content={"detail": "请上传 .xlsx 格式的文件"})
+
+    content = await file.read()
+    result = import_from_excel(db, content, created_by=user.username)
+    return result
+
+
+@app.post("/api/import/yaml")
+async def import_yaml_file(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user)
+):
+    """从 YAML 导入用例"""
+    if not file.filename.endswith((".yaml", ".yml")):
+        return JSONResponse(status_code=400, content={"detail": "请上传 .yaml 格式的文件"})
+
+    content = await file.read()
+    result = import_from_yaml(db, content.decode("utf-8"), created_by=user.username)
+    return result

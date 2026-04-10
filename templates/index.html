@@ -479,8 +479,9 @@
     </div>
     <div style="display:flex; align-items:center; gap:16px;">
         <div class="navbar-links">
-            <a href="/" class="active">用例管理</a>
-            <a href="#" onclick="toggleBatchPanel()">批量执行</a>
+            <a href="#" class="active" id="tab-cases" onclick="switchTab('cases')">用例管理</a>
+            <a href="#" id="tab-batch" onclick="toggleBatchPanel()">批量执行</a>
+            <a href="#" id="tab-schedule" onclick="switchTab('schedule')">定时任务</a>
         </div>
         <div id="userInfo" style="display:flex; align-items:center; gap:10px;">
             <span style="font-size:13px; color:var(--text-secondary);" id="navUsername"></span>
@@ -495,85 +496,150 @@
 
 <div class="container">
 
-    <!-- 统计卡片 -->
-    <div class="stats-row" id="statsRow">
-        <div class="stat-card">
-            <div class="label">总用例数</div>
-            <div class="value" id="statTotal">-</div>
+     <!-- ===== 用例管理面板 ===== -->
+    <div id="panel-cases">
+
+        <!-- 统计卡片 -->
+        <div class="stats-row" id="statsRow">
+            <div class="stat-card">
+                <div class="label">总用例数</div>
+                <div class="value" id="statTotal">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">模块数</div>
+                <div class="value green" id="statModules">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">高优先级 (P1)</div>
+                <div class="value orange" id="statP1">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">GET / POST</div>
+                <div class="value" id="statMethods">-</div>
+            </div>
         </div>
-        <div class="stat-card">
-            <div class="label">模块数</div>
-            <div class="value green" id="statModules">-</div>
+
+        <!-- 批量执行面板 -->
+        <div class="batch-panel" id="batchPanel">
+            <h4>批量执行用例</h4>
+            <div class="batch-filters">
+                <input class="filter-input" id="batchModule" placeholder="模块筛选">
+                <input class="filter-input" id="batchPriority" placeholder="优先级" type="number" min="1" max="10" style="width:100px">
+                <input class="filter-input" id="batchTag" placeholder="标签筛选">
+                <button class="btn btn-primary" onclick="startBatchRun()">▶ 开始批量执行</button>
+            </div>
+            <div id="batchProgress" style="display:none; margin-top: 16px;">
+                <div style="font-size:13px; color:var(--text-secondary);">
+                    执行进度: <span id="batchProgressText">0/0</span>
+                    &nbsp; 状态: <span id="batchStatusText">running</span>
+                </div>
+                <div class="progress-bar-wrap">
+                    <div class="progress-bar" id="batchProgressBar" style="width:0%"></div>
+                </div>
+                <div style="margin-top:10px;">
+                    <a id="batchReportLink" href="#" target="_blank" style="display:none; color:var(--accent); font-size:13px;">查看详细报告 →</a>
+                </div>
+            </div>
         </div>
-        <div class="stat-card">
-            <div class="label">高优先级 (P1)</div>
-            <div class="value orange" id="statP1">-</div>
+
+        <!-- 工具栏 -->
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <input class="filter-input" id="filterModule" placeholder="模块筛选" oninput="loadCases()">
+                <input class="filter-input" id="filterPriority" placeholder="优先级" type="number" min="1" max="10" style="width:100px" oninput="loadCases()">
+                <input class="filter-input" id="filterTag" placeholder="标签筛选" oninput="loadCases()">
+                <button class="btn btn-secondary" onclick="loadCases()">刷新</button>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <button class="btn btn-secondary" onclick="exportCases('excel')">导出Excel</button>
+                <button class="btn btn-secondary" onclick="exportCases('yaml')">导出YAML</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">导入用例</button>
+                <input type="file" id="importFile" accept=".xlsx,.yaml,.yml" style="display:none;" onchange="importCases(this)">
+                <button class="btn btn-primary" onclick="openCreateModal()">+ 新建用例</button>
+            </div>
         </div>
-        <div class="stat-card">
-            <div class="label">GET / POST</div>
-            <div class="value" id="statMethods">-</div>
+
+        <!-- 用例表格 -->
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>用例名称</th>
+                        <th>方法</th>
+                        <th>URL</th>
+                        <th>模块</th>
+                        <th>优先级</th>
+                        <th>标签</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="caseTableBody">
+                    <tr>
+                        <td colspan="8" class="empty-state">
+                            <div class="icon">📋</div>
+                            <div>加载中...</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
-    <!-- 批量执行面板 -->
-    <div class="batch-panel" id="batchPanel">
-        <h4>批量执行用例</h4>
-        <div class="batch-filters">
-            <input class="filter-input" id="batchModule" placeholder="模块筛选">
-            <input class="filter-input" id="batchPriority" placeholder="优先级" type="number" min="1" max="10" style="width:100px">
-            <input class="filter-input" id="batchTag" placeholder="标签筛选">
-            <button class="btn btn-primary" onclick="startBatchRun()">▶ 开始批量执行</button>
+        <!-- 定时任务面板 -->
+    <div id="panel-schedule" class="tab-panel" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h3 style="margin:0; color:#e0e0e0;">定时任务管理</h3>
+            <button onclick="showJobModal()" style="padding:8px 20px; background:#4CAF50; color:#fff; border:none; border-radius:6px; cursor:pointer;">+ 新建定时任务</button>
         </div>
-        <div id="batchProgress" style="display:none; margin-top: 16px;">
-            <div style="font-size:13px; color:var(--text-secondary);">
-                执行进度: <span id="batchProgressText">0/0</span>
-                &nbsp; 状态: <span id="batchStatusText">running</span>
-            </div>
-            <div class="progress-bar-wrap">
-                <div class="progress-bar" id="batchProgressBar" style="width:0%"></div>
-            </div>
-            <div style="margin-top:10px;">
-                <a id="batchReportLink" href="#" target="_blank" style="display:none; color:var(--accent); font-size:13px;">查看详细报告 →</a>
-            </div>
-        </div>
-    </div>
-
-    <!-- 工具栏 -->
-    <div class="toolbar">
-        <div class="toolbar-left">
-            <input class="filter-input" id="filterModule" placeholder="模块筛选" oninput="loadCases()">
-            <input class="filter-input" id="filterPriority" placeholder="优先级" type="number" min="1" max="10" style="width:100px" oninput="loadCases()">
-            <input class="filter-input" id="filterTag" placeholder="标签筛选" oninput="loadCases()">
-            <button class="btn btn-secondary" onclick="loadCases()">刷新</button>
-        </div>
-        <button class="btn btn-primary" onclick="openCreateModal()">+ 新建用例</button>
-    </div>
-
-    <!-- 用例表格 -->
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>用例名称</th>
-                    <th>方法</th>
-                    <th>URL</th>
-                    <th>模块</th>
-                    <th>优先级</th>
-                    <th>标签</th>
-                    <th>操作</th>
-                </tr>
-            </thead>
-            <tbody id="caseTableBody">
-                <tr>
-                    <td colspan="8" class="empty-state">
-                        <div class="icon">📋</div>
-                        <div>加载中...</div>
-                    </td>
-                </tr>
-            </tbody>
+        <table style="width:100%; border-collapse:collapse;">
+        <thead>
+            <tr style="background:#2a2a3e; color:#aaa; text-align:left;">
+                <th style="padding:10px;">ID</th>
+                <th style="padding:10px;">任务名称</th>
+                <th style="padding:10px;">Cron表达式</th>
+                <th style="padding:10px;">执行模块</th>
+                <th style="padding:10px;">状态</th>
+                <th style="padding:10px;">上次执行</th>
+                <th style="padding:10px;">上次结果</th>
+                <th style="padding:10px;">创建人</th>
+                <th style="padding:10px;">操作</th>
+            </tr>
+        </thead>
+        <tbody id="job-table-body"></tbody>
         </table>
     </div>
+
+    <!-- 定时任务弹窗 -->
+    <div id="job-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:100; justify-content:center; align-items:center;">
+        <div style="background:#1e1e2e; padding:30px; border-radius:12px; width:500px; max-width:90%;">
+            <h3 id="job-modal-title" style="color:#e0e0e0; margin-top:0;">新建定时任务</h3>
+            <input type="hidden" id="job-edit-id">
+            <div style="margin-bottom:12px;">
+            <label style="color:#aaa; display:block; margin-bottom:4px;">任务名称</label>
+            <input id="job-name" style="width:100%; padding:8px; background:#2a2a3e; border:1px solid #444; color:#e0e0e0; border-radius:6px;" placeholder="如：每日回归-用户模块">
+        </div>
+        <div style="margin-bottom:12px;">
+            <label style="color:#aaa; display:block; margin-bottom:4px;">Cron表达式（分 时 日 月 星期）</label>
+            <input id="job-cron" style="width:100%; padding:8px; background:#2a2a3e; border:1px solid #444; color:#e0e0e0; border-radius:6px;" placeholder="如：0 2 * * * 表示每天凌晨2点">
+            <small style="color:#666;">常用：<code>0 2 * * *</code> 每天2点 | <code>0 8 * * 1-5</code> 工作日8点 | <code>*/30 * * * *</code> 每30分钟</small>
+        </div>
+        <div style="margin-bottom:12px;">
+            <label style="color:#aaa; display:block; margin-bottom:4px;">执行模块（留空=全部）</label>
+            <input id="job-module" style="width:100%; padding:8px; background:#2a2a3e; border:1px solid #444; color:#e0e0e0; border-radius:6px;" placeholder="如：user、order，留空执行全部用例">
+        </div>
+        <div style="margin-bottom:16px;">
+            <label style="color:#aaa; display:block; margin-bottom:4px;">启用状态</label>
+            <select id="job-enabled" style="padding:8px; background:#2a2a3e; border:1px solid #444; color:#e0e0e0; border-radius:6px;">
+                <option value="1">启用</option>
+                <option value="0">禁用</option>
+            </select>
+        </div>
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+            <button onclick="closeJobModal()" style="padding:8px 20px; background:#555; color:#fff; border:none; border-radius:6px; cursor:pointer;">取消</button>
+            <button onclick="saveJob()" style="padding:8px 20px; background:#4CAF50; color:#fff; border:none; border-radius:6px; cursor:pointer;">保存</button>
+        </div>
+     </div>
 </div>
 
 <!-- 新建/编辑用例 弹窗 -->
@@ -1025,6 +1091,193 @@
             }
         };
         poll();
+    }
+
+    // ===== 定时任务相关 =====
+    function switchTab(tab) {
+        // 隐藏所有面板
+        document.getElementById('panel-cases').style.display = 'none';
+        document.getElementById('panel-schedule').style.display = 'none';
+        // 清除所有tab激活状态
+        document.querySelectorAll('.navbar-links a').forEach(a => a.classList.remove('active'));
+        // 显示目标面板
+        document.getElementById('panel-' + tab).style.display = 'block';
+        document.getElementById('tab-' + tab).classList.add('active');
+        // 切到定时任务时加载数据
+        if (tab === 'schedule') loadJobs();
+        // 切回用例管理时刷新
+        if (tab === 'cases') loadCases();
+    }
+
+        // ===== 导入导出相关 =====
+    function exportCases(format) {
+        const module = document.getElementById('filterModule').value;
+        let url = `/api/export/${format}`;
+        if (module) url += `?module=${encodeURIComponent(module)}`;
+        window.open(url, '_blank');
+    }
+
+    async function importCases(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        const token = localStorage.getItem('token');
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // 根据文件后缀选择接口
+        const ext = file.name.split('.').pop().toLowerCase();
+        let url = '';
+        if (ext === 'xlsx' || ext === 'xls') {
+            url = '/api/import/excel';
+        } else if (ext === 'yaml' || ext === 'yml') {
+            url = '/api/import/yaml';
+        } else {
+            alert('不支持的文件格式，请上传 .xlsx 或 .yaml 文件');
+            input.value = '';
+            return;
+        }
+
+        try {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token },
+                body: formData
+            });
+            const result = await res.json();
+            if (res.ok) {
+                showToast(`导入完成！成功${result.imported}条，跳过${result.skipped}条`, 'success');
+                if (result.errors && result.errors.length > 0) {
+                    console.log('导入错误详情:', result.errors);
+                }
+                loadCases();
+            } else {
+                showToast(result.detail || '导入失败', 'error');
+            }
+        } catch (e) {
+            showToast('导入失败: ' + e.message, 'error');
+        }
+        input.value = '';  // 清空文件选择，允许重复导入同一文件
+    }
+
+    async function loadJobs() {
+        const res = await fetch('/api/jobs');
+        const jobs = await res.json();
+        const tbody = document.getElementById('job-table-body');
+        tbody.innerHTML = '';
+        jobs.forEach(job => {
+            const statusColor = job.enabled === 1 ? '#4CAF50' : '#666';
+            const statusText = job.enabled === 1 ? '启用' : '禁用';
+            const resultColor = job.last_run_status === 'success' ? '#4CAF50' : (job.last_run_status ? '#f44336' : '#666');
+            tbody.innerHTML += `
+                <tr style="border-bottom:1px solid #333;">
+                    <td style="padding:10px; color:#e0e0e0;">${job.id}</td>
+                    <td style="padding:10px; color:#e0e0e0;">${job.name}</td>
+                    <td style="padding:10px; color:#aaa; font-family:monospace;">${job.cron_expr}</td>
+                    <td style="padding:10px; color:#aaa;">${job.module || '全部'}</td>
+                    <td style="padding:10px;"><span style="color:${statusColor}; font-weight:bold;">${statusText}</span></td>
+                    <td style="padding:10px; color:#aaa;">${job.last_run_at || '-'}</td>
+                    <td style="padding:10px;"><span style="color:${resultColor};">${job.last_run_status || '-'}</span></td>
+                    <td style="padding:10px; color:#aaa;">${job.created_by || '-'}</td>
+                    <td style="padding:10px;">
+                        <button onclick="toggleJob(${job.id})" style="padding:4px 10px; background:${job.enabled === 1 ? '#ff9800' : '#4CAF50'}; color:#fff; border:none; border-radius:4px; cursor:pointer; margin-right:4px;">${job.enabled === 1 ? '禁用' : '启用'}</button>
+                        <button onclick="runJobNow(${job.id})" style="padding:4px 10px; background:#2196F3; color:#fff; border:none; border-radius:4px; cursor:pointer; margin-right:4px;">立即执行</button>
+                        <button onclick="editJob(${job.id})" style="padding:4px 10px; background:#555; color:#fff; border:none; border-radius:4px; cursor:pointer; margin-right:4px;">编辑</button>
+                        <button onclick="deleteJob(${job.id})" style="padding:4px 10px; background:#f44336; color:#fff; border:none; border-radius:4px; cursor:pointer;">删除</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    function showJobModal(job = null) {
+        document.getElementById('job-modal').style.display = 'flex';
+        if (job) {
+            document.getElementById('job-modal-title').textContent = '编辑定时任务';
+            document.getElementById('job-edit-id').value = job.id;
+            document.getElementById('job-name').value = job.name;
+            document.getElementById('job-cron').value = job.cron_expr;
+            document.getElementById('job-module').value = job.module || '';
+            document.getElementById('job-enabled').value = job.enabled;
+        } else {
+            document.getElementById('job-modal-title').textContent = '新建定时任务';
+            document.getElementById('job-edit-id').value = '';
+            document.getElementById('job-name').value = '';
+            document.getElementById('job-cron').value = '';
+            document.getElementById('job-module').value = '';
+            document.getElementById('job-enabled').value = '1';
+        }
+    }
+
+    function closeJobModal() {
+        document.getElementById('job-modal').style.display = 'none';
+    }
+
+    async function saveJob() {
+        const token = localStorage.getItem('token');
+        const editId = document.getElementById('job-edit-id').value;
+        const data = {
+            name: document.getElementById('job-name').value,
+            cron_expr: document.getElementById('job-cron').value,
+            module: document.getElementById('job-module').value || null,
+            enabled: parseInt(document.getElementById('job-enabled').value)
+        };
+
+        const url = editId ? `/api/jobs/${editId}` : '/api/jobs';
+        const method = editId ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (res.ok) {
+            closeJobModal();
+            loadJobs();
+        } else {
+            alert(result.detail || '操作失败');
+        }
+    }
+
+    async function toggleJob(jobId) {
+        const token = localStorage.getItem('token');
+        await fetch(`/api/jobs/${jobId}/toggle`, {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        loadJobs();
+    }
+
+    async function runJobNow(jobId) {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`/api/jobs/${jobId}/run`, {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const result = await res.json();
+        alert(`执行完成！batch_id: ${result.batch_id}, 状态: ${result.status}`);
+        loadJobs();
+    }
+
+    let _jobsCache = [];
+    async function editJob(jobId) {
+        if (_jobsCache.length === 0) {
+            const res = await fetch('/api/jobs');
+            _jobsCache = await res.json();
+        }
+        const job = _jobsCache.find(j => j.id === jobId);
+        if (job) showJobModal(job);
+    }
+
+    async function deleteJob(jobId) {
+        if (!confirm('确定删除这个定时任务？')) return;
+        const token = localStorage.getItem('token');
+        await fetch(`/api/jobs/${jobId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        loadJobs();
     }
 
     // ========== 初始化 ==========
